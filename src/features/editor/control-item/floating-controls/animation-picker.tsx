@@ -57,14 +57,20 @@ export const createPresetButtons = (
         <div
           key={presetKey}
           className={`flex cursor-pointer flex-col gap-2 text-center text-xs text-muted-foreground items-center justify-center border ${borderColor}`}
-          onClick={() =>
+          onClick={() => {
+            console.log("Animation preset clicked:", {
+              presetKey,
+              type,
+              activeIds,
+              hasTrackItemsMap: !!trackItemsMap,
+            });
             applyAnimation(
               presetKey as PresetName,
               type,
               activeIds,
               trackItemsMap
-            )
-          }
+            );
+          }}
         >
           <div style={style} draggable={false} />
           <div>{preset.name}</div>
@@ -78,11 +84,21 @@ const applyAnimation = (
   activeIds: string[],
   trackItemsMap: any
 ) => {
+  console.log("applyAnimation called:", {
+    presetName,
+    type,
+    activeIds,
+    hasTrackItemsMap: !!trackItemsMap,
+  });
+
   if (!activeIds.length) {
     console.warn("No active ID to apply the animation to.");
     return;
   }
+  
   const presetAnimation: any = presets[presetName];
+  console.log("Preset animation found:", !!presetAnimation);
+  
   const composition: Animation[] = [presetAnimation];
   if (presetName.includes("rotate") && presetName.includes("In"))
     composition.push(presets.scaleIn);

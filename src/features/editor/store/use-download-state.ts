@@ -45,61 +45,98 @@ export const useDownloadState = create<DownloadState>((set, get) => ({
     startExport: async () => {
       try {
         // Set exporting to true at the start
-        set({ exporting: true, displayProgressModal: true });
+        set({ exporting: true, displayProgressModal: true, progress: 0 });
 
-        // Assume payload to be stored in the state for POST request
-        const { payload } = get();
+        // Get payload and export type
+        const { payload, exportType } = get();
 
         if (!payload) throw new Error("Payload is not defined");
 
-        // Step 1: POST request to start rendering
-        const response = await fetch(`/api/render`, {
+        // Handle JSON export
+        if (exportType === "json") {
+          console.log("Exporting as JSON");
+          
+          // Create JSON blob and download
+          const jsonString = JSON.stringify(payload, null, 2);
+          const blob = new Blob([jsonString], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          
+          // Create download link
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `design-${Date.now()}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Clean up
+          URL.revokeObjectURL(url);
+          
+          // Set output
+          set({
+            output: {
+              url: "",
+              type: "json"
+            },
+            progress: 100,
+            exporting: false,
+            displayProgressModal: false
+          });
+          
+          return;
+        }
+
+        // Handle MP4 export (existing logic)
+        console.log("About to send payload to render API:");
+        console.log("- trackItemIds:", payload.trackItemIds);
+        console.log("- trackItemsMap keys:", Object.keys(payload.trackItemsMap || {}));
+        if (payload.trackItemIds && payload.trackItemIds.length > 0) {
+          const firstId = payload.trackItemIds[0];
+          const firstItem = payload.trackItemsMap[firstId];
+          console.log("- First trackItem ID:", firstId);
+          console.log("- First trackItem:", firstItem);
+          console.log("- Has display?", !!firstItem?.display);
+          console.log("- Has trim?", !!firstItem?.trim);
+          console.log("- Display value:", firstItem?.display);
+          console.log("- Trim value:", firstItem?.trim);
+        }
+
+        // Step 1: POST request to start rendering locally
+        const response = await fetch(`/api/render/local`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
             design: payload,
-            options: {
+            composition: {
+              id: "MainComposition",
               fps: 30,
-              size: payload.size,
-              format: "mp4"
+              width: payload.size?.width || 1080,
+              height: payload.size?.height || 1920,
             }
           })
         });
 
-        if (!response.ok) throw new Error("Failed to submit export request.");
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Render API error:", errorData);
+          throw new Error(errorData.details || errorData.error || "Failed to render video");
+        }
 
-        const jobInfo = await response.json();
-        const jobId = jobInfo.render.id;
+        const result = await response.json();
 
-        // Step 2 & 3: Polling for status updates
-        const checkStatus = async () => {
-          const statusResponse = await fetch(`/api/render/${jobId}`, {
-            headers: {
-              "Content-Type": "application/json"
-            }
-          });
+        // Local rendering completes in one step
+        set({ 
+          exporting: false, 
+          progress: 100,
+          output: { url: result.url, type: get().exportType }
+        });
 
-          if (!statusResponse.ok)
-            throw new Error("Failed to fetch export status.");
-
-          const statusInfo = await statusResponse.json();
-          const { status, progress, presigned_url: url } = statusInfo.render;
-
-          set({ progress });
-
-          if (status === "COMPLETED") {
-            set({ exporting: false, output: { url, type: get().exportType } });
-          } else if (status === "PROCESSING" || status === "PENDING") {
-            setTimeout(checkStatus, 2500);
-          }
-        };
-
-        checkStatus();
       } catch (error) {
-        console.error(error);
-        set({ exporting: false });
+        console.error("Render error:", error);
+        set({ exporting: false, progress: 0 });
+        alert(error instanceof Error ? error.message : "Failed to render video");
       }
     }
   }

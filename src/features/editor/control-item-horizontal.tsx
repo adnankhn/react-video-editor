@@ -23,6 +23,7 @@ import ColorPicker from "@/components/color-picker";
 import { dispatch } from "@designcombo/events";
 import { EDIT_OBJECT } from "@designcombo/state";
 import { Label } from "@/components/ui/label";
+import CustomEffects from "./control-item/floating-controls/custom-effects";
 
 const ActiveControlItem = ({
   trackItem,
@@ -516,6 +517,10 @@ const ControlItem = ({
     return <CaptionEmphasizeColorPickerControl trackItem={trackItem} />;
   }
 
+  if (feature === "customEffects") {
+    return <CustomEffects />;
+  }
+
   // Then check track item type for standard features
   return (
     <>
@@ -785,6 +790,7 @@ const ItemImage = ({
       { icon: Icons.crop, label: "Crop", id: "crop" },
       { icon: Icons.basic, label: "Basic", id: "basic" },
       { icon: Icons.animation, label: "Animations", id: "animations" },
+      { icon: Icons.animation, label: "Custom Effects", id: "customEffects" },
       { icon: Icons.outline, label: "Outline", id: "outline" },
       { icon: Icons.shadow, label: "Shadow", id: "shadow" }
     ]}
@@ -802,6 +808,7 @@ const ItemVideo = ({
       { icon: Icons.crop, label: "Crop", id: "crop" },
       { icon: Icons.basic, label: "Basic", id: "basic" },
       { icon: Icons.animation, label: "Animations", id: "animations" },
+      { icon: Icons.animation, label: "Custom Effects", id: "customEffects" },
       { icon: Icons.outline, label: "Outline", id: "outline" },
       { icon: Icons.shadow, label: "Shadow", id: "shadow" }
     ]}

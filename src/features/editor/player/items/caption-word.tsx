@@ -1,3 +1,15 @@
+/*
+* SRT Caption Word Timing Logic
+*
+* For SRT captions:
+* - currentFrame is global timeline frame (not adjusted)
+* - offsetFrom is display.from (timeline position where caption starts)
+* - word.start is zero-based relative to audio track
+* - absolute activation = offsetFrom + word.start
+*
+* This ensures SRT captions sync properly with audio regardless of timeline position
+*/
+
 import React from "react";
 import styled from "@emotion/styled";
 import { css, keyframes } from "@emotion/react";
@@ -27,6 +39,7 @@ interface WordSpanProps {
   scaleFactor: number;
   animationNoneCaption: boolean;
   showObject: string;
+  isSRTPaired?: boolean;
 }
 
 const WordSpan = styled.span<WordSpanProps>`
@@ -36,8 +49,8 @@ const WordSpan = styled.span<WordSpanProps>`
   color: ${(props) => props.wordColor};
   scale: ${(props) => props.scale};
   border-radius: 16px;
-  z-index: 99;
-  transition: opacity 0.2s ease;
+  z-index: 1;
+  transition: ${(props) => props.isSRTPaired ? 'none' : 'opacity 0.2s ease'};
 
   ${(props) => {
     if (props.isActive && props.animation.includes("underline-effect")) {
@@ -75,7 +88,7 @@ const WordSpan = styled.span<WordSpanProps>`
     right: -0.2em;
     top: 0;
     bottom: 0;
-    transition: background-color 0.2s ease;
+    transition: ${(props) => props.isSRTPaired ? 'none !important' : 'background-color 0.2s ease'};
     border-radius: ${(props) => `${props.scaleFactor * 16}px`};
   }
 
@@ -85,14 +98,14 @@ const WordSpan = styled.span<WordSpanProps>`
       &::before {
         background-color: ${props.activeFillColor};
 
-        ${props.animation === "captionAnimation10" ||
+        ${props.isSRTPaired ? '' : (props.animation === "captionAnimation10" ||
         props.animation === "captionAnimationKeyword42" ||
         props.animation === "captionAnimationKeyword57" ||
-        (props.animation === "captionAnimationKeyword48" &&
+        props.animation === "captionAnimationKeyword48") &&
           css`
             animation: ${scalePulse} 0.4s ease-in-out;
             transform-origin: center;
-          `)}
+          `}
       }
     `}
 `;
@@ -113,6 +126,9 @@ interface CaptionWordProps {
   showObject: string;
   lineIndex?: number;
   currentLine?: number;
+  fps?: number;
+  currentFrame?: number;
+  isSRTPaired?: boolean;
 }
 
 export const CaptionWord: React.FC<CaptionWordProps> = ({
@@ -130,27 +146,52 @@ export const CaptionWord: React.FC<CaptionWordProps> = ({
   animationNoneCaption,
   showObject,
   lineIndex,
-  currentLine
+  currentLine,
+  fps: propFps,
+  currentFrame: propFrame,
+  isSRTPaired
 }) => {
-  const fps = 30;
+  // Strictly use passed props if available (Remotion mode)
+  // Only use player hook for preview mode when props aren't passed
   const { playerRef } = useStore();
-  const currentFrame = useCurrentPlayerFrame(playerRef!);
+  const playerFrame = useCurrentPlayerFrame(playerRef!);
+  
+  // Priority: passed props > player hook
+  const fps = propFps || 30;
+  const currentFrame = propFrame !== undefined ? propFrame : playerFrame;
+  
   const { start, end } = word;
-  const startAtFrame = ((start + offsetFrom) / 1000) * fps;
-  const endAtFrame = ((end + offsetFrom) / 1000) * fps;
-  const isActive = currentFrame > startAtFrame && currentFrame < endAtFrame;
-  const isAppeared = currentFrame > startAtFrame;
-  console.log("CaptionWord", {
-    word,
-    offsetFrom,
-    isActive,
-    currentFrame,
-    startAtFrame,
-    endAtFrame,
-    isAppeared,
-    lineIndex,
-    currentLine
-  });
+  
+  // Declare variables
+  let isActive: boolean;
+  let isAppeared: boolean;
+  let startAtFrame: number;
+  let endAtFrame: number;
+  
+  // For SRT captions, use time-based calculation with global frame
+  if (isSRTPaired) {
+    // Convert global frame to time in milliseconds
+    const currentTimeMs = (currentFrame / fps) * 1000;
+    // Word timings are ZERO-BASED (relative to audio file start)
+    // offsetFrom is display.from (timeline position where caption starts)
+    // So absolute time = timeline position + relative word time
+    const absoluteStartTime = offsetFrom + start;
+    const absoluteEndTime = offsetFrom + end;
+    
+    isActive = currentTimeMs >= absoluteStartTime && currentTimeMs < absoluteEndTime;
+    isAppeared = currentTimeMs >= absoluteStartTime;
+    
+    // Calculate frame equivalents for animation functions
+    startAtFrame = Math.round(absoluteStartTime / 1000 * fps);
+    endAtFrame = Math.round(absoluteEndTime / 1000 * fps);
+  } else {
+    // Use original frame-based calculation for non-SRT captions
+    // Fix timing precision with proper rounding
+    startAtFrame = Math.round(((start + offsetFrom) / 1000) * fps);
+    endAtFrame = Math.round(((end + offsetFrom) / 1000) * fps);
+    isActive = currentFrame >= startAtFrame && currentFrame < endAtFrame;
+    isAppeared = currentFrame >= startAtFrame;
+  }
 
   // Handle line-based visibility
   if (
@@ -165,15 +206,24 @@ export const CaptionWord: React.FC<CaptionWordProps> = ({
 
   // Word color logic
   const getWordColor = () => {
-    let baseColor = isActive ? activeColor : isAppeared ? appearedColor : color;
+    // For SRT captions: only the current/active word should be highlighted
+    // Words that have been spoken should return to normal color
+    let baseColor = isActive ? activeColor : (isAppeared ? appearedColor : color);
 
     if (word.is_keyword && isKeywordColor !== "transparent") {
-      if (isActive || (preservedColorKeyWord && isAppeared)) {
+      if (isActive) {
         return isKeywordColor;
       }
     }
-
-    return baseColor;
+    
+    // Special handling for SRT captions to ensure proper highlighting
+    if (isActive) {
+      return activeColor;
+    } else if (isAppeared) {
+      return appearedColor;
+    } else {
+      return color;
+    }
   };
 
   const wordColor = getWordColor();
@@ -217,6 +267,11 @@ export const CaptionWord: React.FC<CaptionWordProps> = ({
     return transforms.length > 0 ? transforms.join(" ") : undefined;
   };
 
+  // For SRT captions, use global opacity instead of animationState.opacity to avoid interference
+  const finalOpacity = isSRTPaired
+    ? (globalOpacity !== undefined ? globalOpacity : 1)
+    : animationState.opacity;
+
   return (
     <WordSpan
       isActive={isActive}
@@ -226,12 +281,13 @@ export const CaptionWord: React.FC<CaptionWordProps> = ({
       animation={animation}
       animationNoneCaption={animationNoneCaption}
       style={{
-        opacity: animationState.opacity,
+        opacity: finalOpacity,
         ...(getTransformStyle() && { transform: getTransformStyle() })
       }}
       isAppeared={isAppeared}
       scaleFactor={scaleFactor}
       showObject={showObject}
+      isSRTPaired={isSRTPaired}
     >
       {displayText}
     </WordSpan>

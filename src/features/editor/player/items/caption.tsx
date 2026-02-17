@@ -1,3 +1,15 @@
+/*
+* SRT Caption Synchronization Fix - Time Calculation Approach
+*
+* For SRT captions, the timing follows these rules:
+* 1. Global frame comes from the timeline/preview engine
+* 2. Words start from 0 (relative to audio track timing) 
+* 3. Timeline position is captured via offsetFrom = display.from
+* 4. Actual timeline time for word = timeline position + relative word timing
+*
+* Formula: actual_activation_time = display.from + word.start_time
+*/
+
 import { ICaption } from "@designcombo/types";
 import { BaseSequence, SequenceItemOptions } from "../base-sequence";
 import { BoxAnim, ContentAnim } from "@designcombo/animations";
@@ -35,10 +47,16 @@ export default function Caption({
     fps
   );
   const { from, durationInFrames } = calculateFrames(item.display, fps);
-  const currentFrame = (frame || 0) - (item.display.from * fps) / 1000;
   const [firstWord] = details.words;
-  const offsetFrom = display.from - firstWord.start;
-
+  // Always use global frame time
+  const globalFrame = frame || 0;
+  
+  // For offset calculation: use display.from for positioning on timeline
+  const offsetFrom = display.from;
+  
+  // Calculate currentFrame for animations (adjust frame for animations while keeping timing sync correct)
+  const animationFrame = (frame || 0) - (item.display.from * fps) / 1000;
+  
   // Calculate scale factor and update details
   const updatedDetails = calculateUpdatedDetails(details);
   const scaleFactor = updatedDetails.scaleFactor;
@@ -63,13 +81,14 @@ export default function Caption({
       }}
       animationIn={animationIn}
       animationOut={animationOut}
-      frame={currentFrame}
+      frame={animationFrame}
       durationInFrames={durationInFrames}
+
     >
       <ContentAnim
         animationTimed={animationTimed}
         durationInFrames={durationInFrames}
-        frame={currentFrame}
+        frame={animationFrame}
         style={{
           height: "100%",
           width: "100%",
@@ -86,11 +105,20 @@ export default function Caption({
             ...extraStyles,
             transition: "transform 0.2s ease",
             borderRadius: "16px",
-            display: currentFrame > 0 ? "block" : "none",
+            display: (frame || 0) >= (item.display.from * fps) / 1000 && (frame || 0) <= (item.display.to * fps) / 1000 ? "block" : "none", // Show caption when within its time range
             maxWidth: "100%",
             maxHeight: "max-content",
             height: "100%",
-            padding: "8px"
+            padding: "8px",
+            // Handle SRT-specific background styling
+            ...(updatedDetails.isSRTPaired && {
+              backgroundColor: updatedDetails.backgroundColor || 'rgba(0, 0, 0, 0.8)',
+              opacity: (updatedDetails.backgroundOpacity !== undefined ? updatedDetails.backgroundOpacity / 100 : 1)
+            }),
+            // Ensure proper text color contrast for SRT captions
+            ...(updatedDetails.isSRTPaired && {
+              color: updatedDetails.color || '#ffffff'
+            })
           }}
         >
           {renderWords(
@@ -99,7 +127,7 @@ export default function Caption({
             scaleFactor,
             offsetFrom,
             fps,
-            currentFrame,
+            globalFrame,
             globalOpacity
           )}
         </div>
@@ -140,12 +168,24 @@ function calculateUpdatedDetails(details: any) {
     blur: boxShadow.blur * scaleFactor
   };
 
+  // Handle SRT-specific styling - textColor from SRT settings vs color from regular caption
+  // SRT settings saves to textColor, but Caption expects color
+  const textColor = details.color || details.textColor || "#FFFFFF";
+  const bgColor = details.backgroundColor || "rgba(0, 0, 0, 0.8)";
+
   return {
     ...details,
     WebkitTextStrokeWidth: strokeWidth,
     boxShadow: scaledBoxShadow,
     borderWidth,
-    scaleFactor
+    scaleFactor,
+    // Override color properties for SRT captions to ensure they work
+    color: textColor,
+    textColor: textColor,
+    backgroundColor: bgColor,
+    // Ensure proper positioning for SRT captions
+    top: details.top || 814,
+    left: details.left || 161
   };
 }
 
@@ -407,7 +447,9 @@ function renderWords(
       updatedDetails,
       scaleFactor,
       offsetFrom,
-      globalOpacity
+      globalOpacity,
+      fps,
+      currentFrame
     );
   } else {
     console.log("renderStandardWords");
@@ -416,7 +458,9 @@ function renderWords(
       updatedDetails,
       scaleFactor,
       offsetFrom,
-      globalOpacity
+      globalOpacity,
+      fps,
+      currentFrame
     );
   }
 }
@@ -472,7 +516,9 @@ function renderLineBasedWords(
             globalOpacity,
             undefined,
             lineIndex,
-            currentLine
+            currentLine,
+            fps,
+            frame
           )}
           key={`${lineIndex}-${wordIndex}`}
         />
@@ -486,7 +532,9 @@ function renderCustomAnimation1Words(
   updatedDetails: any,
   scaleFactor: number,
   offsetFrom: number,
-  globalOpacity?: number
+  globalOpacity?: number,
+  fps?: number,
+  currentFrame?: number
 ) {
   const nonKeywordWords = item.details.words.filter(
     (word: any) => !word.is_keyword
@@ -526,7 +574,11 @@ function renderCustomAnimation1Words(
         offsetFrom,
         updatedDetails.animation || "",
         globalOpacity,
-        "word"
+        "word",
+        undefined,
+        undefined,
+        fps,
+        currentFrame
       )}
       key={index}
     />
@@ -538,7 +590,9 @@ function renderStandardWords(
   updatedDetails: any,
   scaleFactor: number,
   offsetFrom: number,
-  globalOpacity?: number
+  globalOpacity?: number,
+  fps?: number,
+  currentFrame?: number
 ) {
   return item.details.words.map((word: any, index: number) => (
     <CaptionWord
@@ -548,7 +602,12 @@ function renderStandardWords(
         scaleFactor,
         offsetFrom,
         updatedDetails.animation || "",
-        globalOpacity
+        globalOpacity,
+        undefined,
+        undefined,
+        undefined,
+        fps,
+        currentFrame
       )}
       key={index}
     />
@@ -565,8 +624,11 @@ const createCaptionWordProps = (
   globalOpacity?: number,
   showObject?: string,
   lineIndex?: number,
-  currentLine?: number
+  currentLine?: number,
+  fps?: number,
+  currentFrame?: number
 ) => ({
+  isSRTPaired: updatedDetails.isSRTPaired || false,
   word,
   offsetFrom,
   activeColor: updatedDetails.activeColor || updatedDetails.color,
@@ -581,5 +643,7 @@ const createCaptionWordProps = (
   animationNoneCaption: false,
   showObject: showObject || updatedDetails?.showObject || "page",
   lineIndex,
-  currentLine
+  currentLine,
+  fps,
+  currentFrame
 });

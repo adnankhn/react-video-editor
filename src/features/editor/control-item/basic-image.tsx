@@ -3,7 +3,7 @@ import { IBoxShadow, IImage, ITrackItem } from "@designcombo/types";
 import Outline from "./common/outline";
 import Shadow from "./common/shadow";
 import Opacity from "./common/opacity";
-import Rounded from "./common/radius";
+import Corners from "./corners";
 import AspectRatio from "./common/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Crop } from "lucide-react";
@@ -15,6 +15,8 @@ import Brightness from "./common/brightness";
 import useLayoutStore from "../store/use-layout-store";
 import { Label } from "@/components/ui/label";
 import { Animations } from "./common/animations";
+import CustomEffects from "./common/custom-effects";
+import BorderEffects from "./border-effects";
 
 const BasicImage = ({
   trackItem,
@@ -49,6 +51,59 @@ const BasicImage = ({
         }
       };
     });
+  };
+
+  const onChangeBorderEffect = (v: string) => {
+    dispatch(EDIT_OBJECT, {
+      payload: {
+        [trackItem.id]: {
+          details: {
+            borderEffect: v
+          }
+        }
+      }
+    });
+    setProperties((prev) => {
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          borderEffect: v
+        }
+      };
+    });
+  };
+
+  const onChangeGlowSpread = (v: number) => {
+    dispatch(EDIT_OBJECT, {
+      payload: {
+        [trackItem.id]: {
+          details: {
+            glowSpread: v
+          }
+        }
+      }
+    });
+    setProperties((prev) => ({
+      ...prev,
+      details: { ...prev.details, glowSpread: v }
+    }));
+  };
+
+  const onChangeGlowIntensity = (v: number) => {
+    dispatch(EDIT_OBJECT, {
+      payload: {
+        [trackItem.id]: {
+          details: {
+            glowIntensity: v
+          }
+        }
+      }
+    });
+    setProperties((prev) => ({
+      ...prev,
+      details: { ...prev.details, glowIntensity: v }
+    }));
   };
 
   const onChangeBorderColor = (v: string) => {
@@ -201,9 +256,10 @@ const BasicImage = ({
           <Label className="font-sans text-xs font-semibold">Basic</Label>
 
           <AspectRatio />
-          <Rounded
-            onChange={(v: number) => onChangeBorderRadius(v)}
+          <Corners
+            label="Corners"
             value={properties.details.borderRadius as number}
+            onChange={(v: number) => onChangeBorderRadius(v)}
           />
           <Opacity
             onChange={(v: number) => handleChangeOpacity(v)}
@@ -225,6 +281,10 @@ const BasicImage = ({
       key: "animations",
       component: <Animations trackItem={trackItem} properties={properties} />
     },
+    {
+      key: "customEffects",
+      component: <CustomEffects trackItem={trackItem} />
+    },
 
     {
       key: "outline",
@@ -235,6 +295,20 @@ const BasicImage = ({
           onChangeBorderColor={(v: string) => onChangeBorderColor(v)}
           valueBorderWidth={properties.details.borderWidth as number}
           valueBorderColor={properties.details.borderColor as string}
+        />
+      )
+    },
+    {
+      key: "borderEffects",
+      component: (
+        <BorderEffects
+          label="Border Effects"
+          value={(properties.details as any).borderEffect as string || "none"}
+          onChange={(v: string) => onChangeBorderEffect(v)}
+          glowSpread={(properties.details as any).glowSpread ?? 50}
+          glowIntensity={(properties.details as any).glowIntensity ?? 50}
+          onChangeGlowSpread={onChangeGlowSpread}
+          onChangeGlowIntensity={onChangeGlowIntensity}
         />
       )
     },

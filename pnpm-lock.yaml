@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@designcombo/animations':
         specifier: ^5.4.2
-        version: 5.4.2(@designcombo/events@1.0.2)(@designcombo/types@5.4.2)(react@19.1.0)(remotion@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
+        version: 5.4.2(@designcombo/events@1.0.2)(@designcombo/types@5.4.2)(react@19.1.0)(remotion@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
       '@designcombo/events':
         specifier: ^1.0.2
         version: 1.0.2
@@ -25,7 +25,7 @@ importers:
         version: 5.4.2(@designcombo/events@1.0.2)(@designcombo/types@5.4.2)(@types/lodash-es@4.17.12)
       '@designcombo/transitions':
         specifier: ^5.4.2
-        version: 5.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(remotion@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
+        version: 5.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(remotion@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
       '@emotion/react':
         specifier: ^11.14.0
         version: 11.14.0(@types/react@19.1.4)(react@19.1.0)
@@ -102,29 +102,29 @@ importers:
         specifier: ^1.2.6
         version: 1.2.6(@types/react-dom@19.1.5(@types/react@19.1.4))(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@remotion/cli':
-        specifier: ^4.0.0
+        specifier: 4.0.320
         version: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@remotion/media-utils':
-        specifier: ^4.0.315
-        version: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: 4.0.320
+        version: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@remotion/paths':
-        specifier: ^4.0.315
-        version: 4.0.315
+        specifier: 4.0.320
+        version: 4.0.320
       '@remotion/player':
-        specifier: ^4.0.315
-        version: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: 4.0.320
+        version: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@remotion/renderer':
-        specifier: ^4.0.0
+        specifier: 4.0.320
         version: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@remotion/shapes':
-        specifier: ^4.0.315
-        version: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: 4.0.320
+        version: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@remotion/three':
-        specifier: ^4.0.0
-        version: 4.0.320(@react-three/fiber@9.1.2(@types/react@19.1.4)(immer@10.1.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(remotion@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(three@0.177.0)
+        specifier: 4.0.320
+        version: 4.0.320(@react-three/fiber@9.1.2(@types/react@19.1.4)(immer@10.1.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(remotion@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(three@0.177.0)
       '@remotion/transitions':
-        specifier: ^4.0.315
-        version: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: 4.0.320
+        version: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@stripe/stripe-js':
         specifier: ^4.10.0
         version: 4.10.0
@@ -225,8 +225,8 @@ importers:
         specifier: '2'
         version: 2.21.6
       remotion:
-        specifier: ^4.0.315
-        version: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: 4.0.320
+        version: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       shiki:
         specifier: '1'
         version: 1.29.2
@@ -1866,29 +1866,17 @@ packages:
   '@remotion/media-parser@4.0.320':
     resolution: {integrity: sha512-hls+qdZzbdaRMWdauZI7abiM2NB6E/1b9Awzt9GQyJc7FlE3dVTOvb7BvH84EKxIoizayzDwYZ4Cu8cW1kIn1g==}
 
-  '@remotion/media-utils@4.0.315':
-    resolution: {integrity: sha512-yoAWwxvvgGg6EHyxZ4oNRI0WxmQt2EXivaY5QL1YNOIQG+mVYZpGiBrMuIggAW1J94T5eZbNgYk2EKgUVKeV7w==}
-    peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-
   '@remotion/media-utils@4.0.320':
     resolution: {integrity: sha512-j2zdUra9IjndCN9hLC/4cTilzMHAQDNOHZPy5YAjPa3U8WloU0qGKCIoZbrEfYHqhclVJBQeGbi/b3gOtM7WEg==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@remotion/paths@4.0.315':
-    resolution: {integrity: sha512-5Qs1NFXn7m39LNaJ/9iT0uTuviGt3l58MH5qfHFUVE55ZA24pKCo2OJ3Za732H3BOxd5J6ihnp0crQ/N6u0PWg==}
+  '@remotion/paths@4.0.320':
+    resolution: {integrity: sha512-Ik90WEMyR2WqZW3fVjMkbtpDN9XuYVFNGPJ+S7fVz4vOCj63yOkPks13HhubWEYX2yJRVGvNfLkLuQGXuLzpvA==}
 
   '@remotion/paths@4.0.340':
     resolution: {integrity: sha512-cOKj+SDnh+r8yQZ6WR5hHDPFW5rCdttzH19xvlWd9sRYuE/QnU63CQsaqkiPOkhwu57v9BxkcKTkQ+pWetgPCA==}
-
-  '@remotion/player@4.0.315':
-    resolution: {integrity: sha512-HABWdTGgLSeSW9qcQMzjtoPMzFEWFbc1IjOUL4VZ1PkPR49+b0ujxfkPfaXoYXRLifEr/7czWxjYdG2W6e3vUQ==}
-    peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
 
   '@remotion/player@4.0.320':
     resolution: {integrity: sha512-1VLmc63sAdjWICwUag0PNB1GvHgPqT0e+/+aAptyunX9gROF6Wv99UVsHCSmORw2Fn3G1OyReBwQSWQg16LDdw==}
@@ -1902,8 +1890,8 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@remotion/shapes@4.0.315':
-    resolution: {integrity: sha512-0elx4ydkgRQFPOWD9vb+4zEuj3xVx1jajBZIJFowzKTpsgaXe9mz9UxhobZf2KlNgVYNlBFNbKLpguIdCecdrg==}
+  '@remotion/shapes@4.0.320':
+    resolution: {integrity: sha512-ppnmgS1n8W2ywc0odHfsvMMskWVJUISNqimz9Pm1ys0HknzUmSFj68mbFZMN29lpYAk0DtJ+37GynzAa1wM48A==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -1938,8 +1926,8 @@ packages:
       remotion: 4.0.320
       three: '>=0.137.0'
 
-  '@remotion/transitions@4.0.315':
-    resolution: {integrity: sha512-8nTwNJE+lVOrRLyGH7Le+BrmrMXhbl18c7ObbI+46h8VSqlqZhm7UEMCqR3mWs/ToEN3eusFqGlnTqWKbjPODA==}
+  '@remotion/transitions@4.0.320':
+    resolution: {integrity: sha512-8nKFTN/K83snHcA+NEvUMpMshOJiukFrHJrKZhbXH4Hd/UCsvR21HXtwst3VmbmfN6ua8TkRubAvrgQwVrb7KQ==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -3881,12 +3869,6 @@ packages:
   remeda@2.21.6:
     resolution: {integrity: sha512-W8G06/lTo6RzCBuMnjzsAi5UwN21+/Ff29HvpnBecvERP5qGw2dOdiXsgzv4jWT2n02mF+HMsmeoOjm5VRK3lw==}
 
-  remotion@4.0.315:
-    resolution: {integrity: sha512-dU9Elt9BGKq18PXfgjCD3cADj98W8LY7x7gc/viH4P8oQuBacUDYbaDD9rUfA4FWOWqiQxZpxY1nbPhlby5Ruw==}
-    peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-
   remotion@4.0.320:
     resolution: {integrity: sha512-MuwEidXU7SCgLyp4pgwDYvQ38X60rLDFvtWrM2aaea2oYj605ugMiOpMwhGphD7A0KCIv+m15iBXFBC0Sz//3w==}
     peerDependencies:
@@ -4036,6 +4018,7 @@ packages:
   source-map@0.8.0-beta.0:
     resolution: {integrity: sha512-2ymg6oRBpebeZi9UUNsgQ89bhx01TcTkmNTGnNO88imTmbSgy4nfujrgVEFKWpMTEGA11EDkTt7mqObTPdigIA==}
     engines: {node: '>= 8'}
+    deprecated: The work that was done in this beta branch won't be included in future versions
 
   space-separated-tokens@1.1.5:
     resolution: {integrity: sha512-q/JSVd1Lptzhf5bkYm4ob4iWPjx0KiRe3sRFBNrVqbJkFaBm5vbbowy1mymoPNLRa52+oadOhJ+K49wsSeSjTA==}
@@ -4539,13 +4522,13 @@ snapshots:
   '@biomejs/cli-win32-x64@1.9.4':
     optional: true
 
-  '@designcombo/animations@5.4.2(@designcombo/events@1.0.2)(@designcombo/types@5.4.2)(react@19.1.0)(remotion@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
+  '@designcombo/animations@5.4.2(@designcombo/events@1.0.2)(@designcombo/types@5.4.2)(react@19.1.0)(remotion@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
     dependencies:
       '@designcombo/events': 1.0.2
       '@designcombo/types': 5.4.2
       nanoid: 5.1.5
       react: 19.1.0
-      remotion: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      remotion: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       rxjs: 7.8.2
 
   '@designcombo/events@1.0.2':
@@ -4588,13 +4571,13 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@designcombo/transitions@5.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(remotion@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
+  '@designcombo/transitions@5.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(remotion@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
     dependencies:
       '@remotion/paths': 4.0.340
       '@remotion/shapes': 4.0.340(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@remotion/transitions': 4.0.340(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
-      remotion: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      remotion: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
     transitivePeerDependencies:
       - react-dom
 
@@ -5879,14 +5862,14 @@ snapshots:
       '@remotion/media-parser': 4.0.320
       '@remotion/studio': 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@remotion/studio-shared': 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      css-loader: 5.2.7(webpack@5.96.1(esbuild@0.25.0))
+      css-loader: 5.2.7(webpack@5.96.1)
       esbuild: 0.25.0
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
       react-refresh: 0.9.0
       remotion: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       source-map: 0.7.3
-      style-loader: 4.0.0(webpack@5.96.1(esbuild@0.25.0))
+      style-loader: 4.0.0(webpack@5.96.1)
       webpack: 5.96.1(esbuild@0.25.0)
     transitivePeerDependencies:
       - '@swc/core'
@@ -5944,27 +5927,15 @@ snapshots:
 
   '@remotion/media-parser@4.0.320': {}
 
-  '@remotion/media-utils@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
-    dependencies:
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      remotion: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-
   '@remotion/media-utils@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
       remotion: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 
-  '@remotion/paths@4.0.315': {}
+  '@remotion/paths@4.0.320': {}
 
   '@remotion/paths@4.0.340': {}
-
-  '@remotion/player@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
-    dependencies:
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      remotion: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 
   '@remotion/player@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
@@ -5995,9 +5966,9 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@remotion/shapes@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@remotion/shapes@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
-      '@remotion/paths': 4.0.315
+      '@remotion/paths': 4.0.320
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
 
@@ -6060,21 +6031,21 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@remotion/three@4.0.320(@react-three/fiber@9.1.2(@types/react@19.1.4)(immer@10.1.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(remotion@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(three@0.177.0)':
+  '@remotion/three@4.0.320(@react-three/fiber@9.1.2(@types/react@19.1.4)(immer@10.1.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(remotion@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(three@0.177.0)':
     dependencies:
       '@react-three/fiber': 9.1.2(@types/react@19.1.4)(immer@10.1.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0)
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
-      remotion: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      remotion: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       three: 0.177.0
 
-  '@remotion/transitions@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@remotion/transitions@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
-      '@remotion/paths': 4.0.315
-      '@remotion/shapes': 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@remotion/paths': 4.0.320
+      '@remotion/shapes': 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
-      remotion: 4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      remotion: 4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 
   '@remotion/transitions@4.0.340(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
@@ -6658,7 +6629,7 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
-  css-loader@5.2.7(webpack@5.96.1(esbuild@0.25.0)):
+  css-loader@5.2.7(webpack@5.96.1):
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.3)
       loader-utils: 2.0.4
@@ -8359,11 +8330,6 @@ snapshots:
     dependencies:
       type-fest: 4.41.0
 
-  remotion@4.0.315(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
-    dependencies:
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-
   remotion@4.0.320(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -8577,7 +8543,7 @@ snapshots:
 
   strip-final-newline@2.0.0: {}
 
-  style-loader@4.0.0(webpack@5.96.1(esbuild@0.25.0)):
+  style-loader@4.0.0(webpack@5.96.1):
     dependencies:
       webpack: 5.96.1(esbuild@0.25.0)
 

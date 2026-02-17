@@ -17,6 +17,7 @@ import { ICompactFont, IFont } from "../interfaces/editor";
 import { DEFAULT_FONT } from "../constants/font";
 import { PresetCaption } from "./common/preset-caption";
 import AnimationCaption from "./common/animation-caption";
+import SRTSettings from "./common/srt-settings";
 
 interface ITextControlProps {
   color: string;
@@ -403,6 +404,12 @@ const BasicCaption = ({
     {
       key: "captionPreset",
       component: <PresetCaption trackItem={trackItem} properties={properties} />
+    },
+    {
+      key: "srtSettings",
+      component: trackItem?.metadata?.isSRTPaired ? (
+        <SRTSettings trackItem={trackItem} />
+      ) : null
     },
     {
       key: "captionWords",

@@ -28,6 +28,17 @@ const SelectaAnimation = ({ trackItem }: { trackItem: ITrackItem & IText }) => {
   const isLargeScreen = useIsLargeScreen();
   const { activeIds, trackItemsMap } = useStore();
 
+  console.log("SelectaAnimation render:", {
+    isLargeScreen,
+    trackItemType: trackItem.type,
+    hasSetFloatingControl: !!setFloatingControl,
+  });
+
+  const handleAnimationClick = () => {
+    console.log("Animation button clicked, calling setFloatingControl");
+    setFloatingControl("animation-picker");
+  };
+
   const presetInButtons = createPresetButtons(
     (key) => key.includes("In"),
     "in",
@@ -59,7 +70,7 @@ const SelectaAnimation = ({ trackItem }: { trackItem: ITrackItem & IText }) => {
           <Button
             className="flex h-8 w-full items-center justify-between text-sm"
             variant="secondary"
-            onClick={() => setFloatingControl("animation-picker")}
+            onClick={handleAnimationClick}
           >
             <div className="w-full text-left">
               <p className="truncate">None</p>

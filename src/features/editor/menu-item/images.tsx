@@ -47,7 +47,9 @@ export const Images = () => {
               to: 5000
             },
             details: {
-              src: payload.details?.src
+              src: payload.details?.src,
+              borderRadius: 0,
+              borderEffect: "none"
             },
             metadata: {}
           }

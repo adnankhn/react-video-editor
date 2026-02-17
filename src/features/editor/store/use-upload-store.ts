@@ -42,11 +42,62 @@ interface IUploadStore {
   removeUpload: (id: string) => void;
   uploads: any[];
   setUploads: (uploads: any[] | ((prev: any[]) => any[])) => void;
+  initialize: () => void;
 }
 
 const useUploadStore = create<IUploadStore>()(
   persist(
     (set, get) => ({
+      // Cleanup invalid uploads on initialization
+      initialize: async () => {
+        const { uploads, setUploads } = get();
+        
+        // Test if URLs are actually accessible
+        const validateUpload = async (upload: any): Promise<boolean> => {
+          // Keep uploads that are still in active/pending state
+          if (upload.status === "uploading" || upload.status === "pending") {
+            return true;
+          }
+          
+          // Check if we have a URL to validate
+          const url = upload.metadata?.uploadedUrl || upload.url;
+          if (!url) {
+            return false;
+          }
+          
+          // For local uploads, check if file exists
+          if (url.startsWith('/uploads/')) {
+            try {
+              // Make a HEAD request to check if file exists
+              const response = await fetch(url, { method: 'HEAD' });
+              return response.ok;
+            } catch (error) {
+              console.log(`Upload ${upload.fileName} validation failed:`, error);
+              return false;
+            }
+          }
+          
+          // For external URLs, assume they're valid
+          return true;
+        };
+        
+        // Validate all uploads
+        const validationResults = await Promise.all(
+          uploads.map(async (upload) => ({
+            upload,
+            isValid: await validateUpload(upload)
+          }))
+        );
+        
+        const validUploads = validationResults
+          .filter(result => result.isValid)
+          .map(result => result.upload);
+        
+        if (validUploads.length !== uploads.length) {
+          setUploads(validUploads);
+          console.log(`Cleaned up ${uploads.length - validUploads.length} invalid uploads`);
+        }
+      },
       showUploadModal: false,
       setShowUploadModal: (showUploadModal: boolean) =>
         set({ showUploadModal }),
@@ -85,6 +136,7 @@ const useUploadStore = create<IUploadStore>()(
 
       activeUploads: [],
       processUploads: () => {
+        console.log('processUploads called with pending uploads:', get().pendingUploads);
         const {
           pendingUploads,
           activeUploads,
@@ -129,10 +181,13 @@ const useUploadStore = create<IUploadStore>()(
         };
 
         // Process all uploading items
-        for (const upload of currentActiveUploads.filter(
+        const uploadingItems = currentActiveUploads.filter(
           (upload) => upload.status === "uploading"
-        )) {
-          console.log("upload", upload);
+        );
+        console.log("Processing uploading items:", uploadingItems);
+        
+        for (const upload of uploadingItems) {
+          console.log("Processing upload:", upload);
           processUpload(
             upload.id,
             { file: upload.file, url: upload.url },
@@ -141,13 +196,30 @@ const useUploadStore = create<IUploadStore>()(
             .then((uploadData) => {
               // Add the complete upload data to the uploads array
               if (uploadData) {
+                console.log('Upload successful, received data:', uploadData);
                 if (Array.isArray(uploadData)) {
                   // URL uploads return an array
-                  setUploads((prev) => [...prev, ...uploadData]);
+                  const processedUploads = uploadData.map(data => ({
+                    ...data,
+                    id: data.id || upload.id,
+                    fileName: data.fileName || data.file?.name || "Unknown",
+                    type: data.type || data.contentType?.split("/")[0] || "unknown"
+                  }));
+                  console.log('Adding URL uploads to store:', processedUploads);
+                  setUploads((prev) => [...prev, ...processedUploads]);
                 } else {
                   // File uploads return a single object
-                  setUploads((prev) => [...prev, uploadData]);
+                  const processedUpload = {
+                    ...uploadData,
+                    id: uploadData.id || upload.id,
+                    fileName: uploadData.fileName || upload.file?.name || "Unknown",
+                    type: uploadData.type || uploadData.contentType?.split("/")[0] || "unknown"
+                  };
+                  console.log('Adding file upload to store:', processedUpload);
+                  setUploads((prev) => [...prev, processedUpload]);
                 }
+              } else {
+                console.log('No upload data received for upload:', upload);
               }
             })
             .catch((error) => {
@@ -186,7 +258,12 @@ const useUploadStore = create<IUploadStore>()(
     }),
     {
       name: "upload-store",
-      partialize: (state) => ({ uploads: state.uploads })
+      partialize: (state) => ({ 
+        uploads: state.uploads,
+        uploadsVideos: state.uploadsVideos,
+        uploadsImages: state.uploadsImages,
+        uploadsAudios: state.uploadsAudios
+      })
     }
   )
 );

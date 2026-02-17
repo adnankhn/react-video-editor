@@ -87,9 +87,12 @@ export const BaseSequence = ({
             background,
             pointerEvents: item.type === "audio" ? "none" : "auto",
             overflow:
-              item.type !== "caption" && item.type !== "text"
-                ? "hidden"
-                : "visible"
+              // Allow overflow when border effects (glow/glass) are active
+              (details as any).borderEffect && (details as any).borderEffect !== "none" && (details.borderWidth ?? 0) > 0
+                ? "visible"
+                : item.type !== "caption" && item.type !== "text"
+                  ? "hidden"
+                  : "visible"
           },
           item.type
         )}

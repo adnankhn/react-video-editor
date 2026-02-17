@@ -31,6 +31,149 @@ export const getAnimations = (
     animation.in.composition.forEach((comp) => {
       if (animation.in.name.includes("slide")) {
         animationIn.push(getSlideAnimation(animation.in.name, comp, item));
+      } else if (comp.property.startsWith("fadeScaleBump")) {
+        animationIn.push({
+          property: "scale",
+          from: 0.5,
+          to: 1,
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.ease
+        });
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames * 0.3,
+          ease: Easing.linear
+        });
+      } else if (comp.property.startsWith("slideUp")) {
+        animationIn.push({
+          property: "translateY",
+          from: 100,
+          to: 0,
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.ease
+        });
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames * 0.3,
+          ease: Easing.linear
+        });
+      } else if (comp.property.startsWith("swooshRight")) {
+        animationIn.push({
+          property: "translateX",
+          from: -200,
+          to: 0,
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.ease
+        });
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames * 0.3,
+          ease: Easing.linear
+        });
+      } else if (comp.property.startsWith("swooshLeft")) {
+        animationIn.push({
+          property: "translateX",
+          from: 200,
+          to: 0,
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.ease
+        });
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames * 0.3,
+          ease: Easing.linear
+        });
+      } else if (comp.property.startsWith("blurFade")) {
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.linear
+        });
+      } else if (comp.property.startsWith("zoomIn")) {
+        animationIn.push({
+          property: "scale",
+          from: 3,
+          to: 1,
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.ease
+        });
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames * 0.3,
+          ease: Easing.linear
+        });
+      } else if (comp.property.startsWith("bounceIn")) {
+        animationIn.push({
+          property: "scale",
+          from: 0.3,
+          to: 1,
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.elastic(1)
+        });
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames * 0.3,
+          ease: Easing.linear
+        });
+      } else if (comp.property.startsWith("flipIn")) {
+        animationIn.push({
+          property: "rotateY",
+          from: -90,
+          to: 0,
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.ease
+        });
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames * 0.5,
+          ease: Easing.linear
+        });
+      } else if (comp.property.startsWith("splitWipeV")) {
+        animationIn.push({
+          property: "clipPath",
+          from: "inset(50% 0 50% 0)",
+          to: "inset(0 0 0 0)",
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.ease
+        });
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames * 0.2,
+          ease: Easing.linear
+        });
+      } else if (comp.property.startsWith("splitWipeH")) {
+        animationIn.push({
+          property: "clipPath",
+          from: "inset(0 50% 0 50%)",
+          to: "inset(0 0 0 0)",
+          durationInFrames: comp.durationInFrames,
+          ease: Easing.ease
+        });
+        animationIn.push({
+          property: "opacity",
+          from: 0,
+          to: 1,
+          durationInFrames: comp.durationInFrames * 0.2,
+          ease: Easing.linear
+        });
       } else {
         animationIn.push({
           property: comp.property,

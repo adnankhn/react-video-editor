@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle
 } from "./ui/dialog";
-import { FileIcon, UploadIcon, X } from "lucide-react";
+import { FileIcon, UploadIcon, X, CaptionsIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +14,8 @@ import clsx from "clsx";
 import useUploadStore from "@/features/editor/store/use-upload-store";
 import axios from "axios";
 import { Input } from "./ui/input";
+import { pairAudioWithSRT, parsePairedSRT, PairedMedia } from "@/utils/srt-audio-pairing";
+import { useSRTCaptionIntegration } from "@/features/editor/hooks/use-srt-integration";
 type ModalUploadProps = {
   type?: string;
 };
@@ -36,6 +38,17 @@ export const extractVideoThumbnail = (file: File) => {
     video.onerror = () => resolve("");
   });
 };
+// Helper function to format file sizes
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
   const {
     setShowUploadModal,
@@ -51,6 +64,9 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
   const [videoUrl, setVideoUrl] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [pairedMedia, setPairedMedia] = useState<PairedMedia[]>([]);
+  const [processingPairs, setProcessingPairs] = useState(false);
+  const { addSRTCaptionsToTimeline, isProcessing: isAddingCaptions } = useSRTCaptionIntegration();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const triggerFileInput = () => {
@@ -69,6 +85,15 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
     if (newFiles.length === 0) return;
 
     setFiles((prev) => [...newFiles, ...prev]);
+
+    // Process SRT pairing
+    setProcessingPairs(true);
+    const { paired } = pairAudioWithSRT(selectedFiles);
+    if (paired.length > 0) {
+      const parsedPaired = await parsePairedSRT(paired);
+      setPairedMedia(prev => [...prev, ...parsedPaired]);
+    }
+    setProcessingPairs(false);
 
     const videoThumbnailsData = await Promise.all(
       newFiles
@@ -105,6 +130,16 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
       if (newFiles.length === 0) return;
 
       setFiles((prev) => [...newFiles, ...prev]);
+      
+      // Process SRT pairing
+      setProcessingPairs(true);
+      const { paired } = pairAudioWithSRT(Array.from(e.dataTransfer.files));
+      if (paired.length > 0) {
+        const parsedPaired = await parsePairedSRT(paired);
+        setPairedMedia(prev => [...prev, ...parsedPaired]);
+      }
+      setProcessingPairs(false);
+
       const videoThumbnailsData = await Promise.all(
         newFiles
           .filter((f) => f.file?.type.startsWith("video/"))
@@ -122,11 +157,17 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
 
   const handleRemoveFile = (id: string, file: File) => {
     setFiles(files.filter((f) => f.id !== id));
+    
+    // Remove from paired media if it's part of a pair
+    setPairedMedia(prev => prev.filter(pair => 
+      pair.audioFile.name !== file.name && pair.srtFile.name !== file.name
+    ));
   };
   function getTypeFromContentType(contentType: string): string {
     if (contentType.startsWith("video/")) return "video";
     if (contentType.startsWith("image/")) return "image";
     if (contentType.startsWith("audio/")) return "audio";
+    if (contentType === "application/x-subrip" || contentType === "text/plain" || contentType.endsWith(".srt")) return "subtitle";
     if (contentType === "application/pdf") return "document";
     return "other";
   }
@@ -161,16 +202,24 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
     return result.upload;
   }
   const handleUpload = async () => {
+    console.log('Starting upload process with files:', files);
+    
     // Prepare UploadFile objects for files
     const fileUploads = files
-      .filter((f) => f.file?.type)
+      .filter((f) => {
+        const isValid = f.file?.type || f.file?.name?.toLowerCase().endsWith('.srt');
+        console.log(`File ${f.file?.name}: type=${f.file?.type}, isSRT=${f.file?.name?.toLowerCase().endsWith('.srt')}, isValid=${isValid}`);
+        return isValid;
+      })
       .map((f) => ({
         id: f.id,
         file: f.file,
-        type: f.file?.type,
+        type: f.file?.type || (f.file?.name?.toLowerCase().endsWith('.srt') ? 'text/plain' : ''),
         status: "pending" as const,
         progress: 0
       }));
+    
+    console.log('Filtered file uploads:', fileUploads);
 
     // Prepare UploadFile object for URL if present
     const urlUploads = videoUrl.trim()
@@ -185,13 +234,22 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
         ]
       : [];
 
+    console.log('Adding to pending uploads:', [...fileUploads, ...urlUploads]);
     // Add to pending uploads
     addPendingUploads([...fileUploads, ...urlUploads]);
 
+    // Automatically add SRT captions for paired media
+    if (pairedMedia.length > 0) {
+      console.log('Adding SRT captions to timeline:', pairedMedia);
+      await addSRTCaptionsToTimeline(pairedMedia);
+    }
+
     setTimeout(() => {
+      console.log('Calling processUploads');
       processUploads();
       // Clear modal state and close
       setFiles([]);
+      setPairedMedia([]);
       setShowUploadModal(false);
       setVideoUrl("");
     }, 0);
@@ -205,11 +263,12 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
       case "video":
         return "video/*";
       default:
-        return "audio/*,image/*,video/*";
+        return "audio/*,image/*,video/*,.srt";
     }
   };
   useEffect(() => {
     setFiles([]);
+    setPairedMedia([]);
   }, [showUploadModal]);
 
   return (
@@ -252,9 +311,17 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
 
             {files.length > 0 && (
               <div className="flex flex-col gap-2 mt-2">
-                <span className="text-xs text-muted-foreground">
-                  Selected files:
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    Selected files:
+                  </span>
+                  {(processingPairs || isAddingCaptions) && (
+                    <span className="text-xs text-blue-500 flex items-center gap-1">
+                      <div className="w-2 h-2 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      {processingPairs ? 'Processing SRT pairs...' : 'Adding captions to timeline...'}
+                    </span>
+                  )}
+                </div>
                 <ScrollArea className="max-h-48">
                   <AnimatePresence initial={false}>
                     <div className="flex flex-col gap-2">
@@ -274,7 +341,14 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
                         >
                           <div className="w-full flex justify-between items-center">
                             <div className="flex flex-1 gap-1 sm:gap-1.5 md:gap-2  items-center">
-                              <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 flex items-center justify-center">
+                              <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 flex items-center justify-center relative">
+                                {/* SRT Pairing Indicator */}
+                                {file.file && pairedMedia.some(pair => pair.audioFile.name === file.file?.name) && (
+                                  <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5">
+                                    <CaptionsIcon className="h-2 w-2 text-white" />
+                                  </div>
+                                )}
+                                
                                 {file.file?.type.startsWith("image/") ? (
                                   <img
                                     src={URL.createObjectURL(file.file)}
@@ -288,6 +362,10 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
                                     alt={`${file.file.name} thumbnail`}
                                     className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 object-cover rounded border"
                                   />
+                                ) : file.file?.name.toLowerCase().endsWith('.srt') ? (
+                                  <div className="h-5 w-5 sm:h-6 md:h-8 md:w-8 flex items-center justify-center rounded border bg-blue-100 dark:bg-blue-900/30">
+                                    <CaptionsIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-400" />
+                                  </div>
                                 ) : (
                                   <div className="h-5 w-5 sm:h-6 md:h-8 md:w-8 flex items-center justify-center rounded border bg-muted">
                                     <FileIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 text-foreground" />
@@ -308,7 +386,7 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
                                   )}
                                 >
                                   {file.file
-                                    ? `${(file.file.size / 1024).toFixed(2)} KB`
+                                    ? formatFileSize(file.file.size)
                                     : ""}
                                 </div>
                               </div>
@@ -346,9 +424,9 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
             </Button>
             <Button
               onClick={handleUpload}
-              disabled={(files.length === 0 && !videoUrl) || isUploading}
+              disabled={(files.length === 0 && !videoUrl) || isUploading || processingPairs || isAddingCaptions}
             >
-              Upload
+              {processingPairs || isAddingCaptions ? 'Processing...' : 'Upload'}
             </Button>
           </DialogFooter>
         </DialogContent>

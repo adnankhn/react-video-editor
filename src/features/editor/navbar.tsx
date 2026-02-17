@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { dispatch } from "@designcombo/events";
 import { HISTORY_UNDO, HISTORY_REDO, DESIGN_RESIZE } from "@designcombo/state";
@@ -11,15 +11,18 @@ import {
 import {
   ChevronDown,
   Download,
+  Upload,
   ProportionsIcon,
   ShareIcon
 } from "lucide-react";
+import { DESIGN_LOAD } from "@designcombo/state";
 import { Label } from "@/components/ui/label";
 
 import type StateManager from "@designcombo/state";
 import { generateId } from "@designcombo/timeline";
 import type { IDesign } from "@designcombo/types";
 import { useDownloadState } from "./store/use-download-state";
+import useStore from "./store/use-store";
 import DownloadProgressModal from "./download-progress-modal";
 import AutosizeInput from "@/components/ui/autosize-input";
 import { debounce } from "lodash";
@@ -142,6 +145,7 @@ export default function Navbar({
             <span className="hidden md:block">Share</span>
           </Button>
 
+          <ImportButton stateManager={stateManager} />
           <DownloadPopover stateManager={stateManager} />
         </div>
       </div>
@@ -149,19 +153,106 @@ export default function Navbar({
   );
 }
 
+const ImportButton = ({ stateManager }: { stateManager: StateManager }) => {
+  const isMediumScreen = useIsMediumScreen();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target?.result as string);
+        console.log("Importing project:", json);
+        
+        // Load the design using DESIGN_LOAD dispatch
+        dispatch(DESIGN_LOAD, { payload: json });
+        
+        console.log("Project imported successfully");
+      } catch (error) {
+        console.error("Failed to import project:", error);
+        alert("Failed to import project. Please make sure the file is a valid JSON export.");
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        style={{ display: "none" }}
+        onChange={handleImport}
+      />
+      <Button
+        className="flex h-7 gap-1 border border-border"
+        size={isMediumScreen ? "sm" : "icon"}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <Upload width={18} />
+        <span className="hidden md:block">Import</span>
+      </Button>
+    </>
+  );
+};
+
 const DownloadPopover = ({ stateManager }: { stateManager: StateManager }) => {
   const isMediumScreen = useIsMediumScreen();
   const { actions, exportType } = useDownloadState();
   const [isExportTypeOpen, setIsExportTypeOpen] = useState(false);
   const [open, setOpen] = useState(false);
+  const store = useStore();
 
   const handleExport = () => {
+    const stateData = stateManager.toJSON();
+    
+    // Build structure from trackItems if it's empty
+    let structure = store.structure;
+    if (!structure || structure.length === 0) {
+      // Create structure from trackItemIds
+      structure = store.trackItemIds.map((id) => ({
+        id,
+        children: [],
+      }));
+    }
+    
     const data: IDesign = {
       id: generateId(),
-      ...stateManager.toJSON()
+      ...stateData,
+      // Add missing fields from store
+      duration: store.duration,
+      structure: structure,
+      trackItemIds: store.trackItemIds,
+      trackItemsMap: store.trackItemsMap,
+      transitionsMap: store.transitionsMap,
+      size: store.size,
+      fps: store.fps,
+      background: store.background,
     };
 
-    console.log({ data });
+    console.log("Export data prepared:");
+    console.log("- hasStructure:", !!data.structure);
+    console.log("- structureLength:", data.structure?.length);
+    console.log("- hasDuration:", !!data.duration);
+    console.log("- duration:", data.duration);
+    console.log("- trackItemIds:", data.trackItemIds?.length);
+    console.log("- trackItemsMap:", Object.keys(data.trackItemsMap || {}).length);
+    console.log("- structure items:", data.structure);
+    
+    // Log full trackItem to see display and trim
+    if (data.trackItemIds && data.trackItemIds.length > 0) {
+      const firstId = data.trackItemIds[0];
+      console.log("- First trackItem full data:", JSON.stringify(data.trackItemsMap[firstId], null, 2));
+    }
 
     actions.setState({ payload: data });
     actions.startExport();

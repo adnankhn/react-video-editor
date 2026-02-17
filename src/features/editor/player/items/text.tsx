@@ -62,6 +62,7 @@ export default function Text({
       animationOut={editableTextId === id ? null : animationOut}
       frame={currentFrame}
       durationInFrames={durationInFrames}
+
     >
       <ContentAnim
         animationTimed={editableTextId === id ? null : animationTimed}

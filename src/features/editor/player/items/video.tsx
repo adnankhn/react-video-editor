@@ -1,7 +1,7 @@
 import { IVideo } from "@designcombo/types";
 import { BaseSequence, SequenceItemOptions } from "../base-sequence";
 import { BoxAnim, ContentAnim, MaskAnim } from "@designcombo/animations";
-import { calculateContainerStyles, calculateMediaStyles } from "../styles";
+import { calculateContainerStyles, calculateMediaStyles, calculateBorderEffectStyles } from "../styles";
 import { getAnimations } from "../../utils/get-animations";
 import { calculateFrames } from "../../utils/frames";
 import { OffthreadVideo } from "remotion";
@@ -30,6 +30,32 @@ export const Video = ({
   };
   const { durationInFrames } = calculateFrames(item.display, fps);
   const currentFrame = (frame || 0) - (item.display.from * fps) / 1000;
+  const effectStyles = calculateBorderEffectStyles(details, crop);
+
+  const maskContent = (
+    <MaskAnim
+      item={item}
+      keyframeAnimations={animationTimed}
+      frame={frame || 0}
+    >
+      <div
+        style={calculateMediaStyles(details, crop)}
+      >
+        <OffthreadVideo
+          startFrom={(item.trim?.from! / 1000) * fps}
+          endAt={(item.trim?.to! / 1000) * fps || 1 / fps}
+          playbackRate={playbackRate}
+          src={details.src}
+          volume={details.volume || 0 / 100}
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "block"
+          }}
+        />
+      </div>
+    </MaskAnim>
+  );
 
   const children = (
     <BoxAnim
@@ -46,21 +72,13 @@ export const Video = ({
         durationInFrames={durationInFrames}
         frame={currentFrame}
       >
-        <MaskAnim
-          item={item}
-          keyframeAnimations={animationTimed}
-          frame={frame || 0}
-        >
-          <div style={calculateMediaStyles(details, crop)}>
-            <OffthreadVideo
-              startFrom={(item.trim?.from! / 1000) * fps}
-              endAt={(item.trim?.to! / 1000) * fps || 1 / fps}
-              playbackRate={playbackRate}
-              src={details.src}
-              volume={details.volume || 0 / 100}
-            />
+        {effectStyles ? (
+          <div style={effectStyles}>
+            {maskContent}
           </div>
-        </MaskAnim>
+        ) : (
+          maskContent
+        )}
       </ContentAnim>
     </BoxAnim>
   );

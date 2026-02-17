@@ -4,9 +4,16 @@ import AnimationPicker from "./animation-picker";
 import CaptionPresetPicker from "./caption-preset-picker";
 import FontFamilyPicker from "./font-family-picker";
 import TextPresetPicker from "./text-preset-picker";
+import CustomEffects from "./custom-effects";
 
 export default function FloatingControl() {
   const { floatingControl, trackItem } = useLayoutStore();
+
+  console.log("FloatingControl render:", {
+    floatingControl,
+    hasTrackItem: !!trackItem,
+    trackItemType: trackItem?.type,
+  });
 
   if (!trackItem) return null;
 
@@ -17,6 +24,7 @@ export default function FloatingControl() {
     return <TextPresetPicker trackItem={trackItem} />;
   }
   if (floatingControl === "animation-picker") {
+    console.log("Rendering AnimationPicker");
     return (
       <AnimationPicker
         animationType={trackItem.type === "text" ? "text" : undefined}
@@ -28,6 +36,9 @@ export default function FloatingControl() {
   }
   if (floatingControl === "caption-preset-picker") {
     return <CaptionPresetPicker trackItem={trackItem} />;
+  }
+  if (floatingControl === "customEffects") {
+    return <CustomEffects />;
   }
   return null;
 }

@@ -203,7 +203,10 @@ const VideoItem = ({
           handleAddImage({
             id: generateId(),
             details: {
-              src: video.details?.src
+              src: video.details?.src,
+              borderWidth: 0,
+              borderColor: "transparent",
+              borderEffect: "none"
             },
             metadata: {
               previewUrl: video.preview

@@ -22,43 +22,36 @@ export async function processFileUpload(
   callbacks: UploadCallbacks
 ): Promise<any> {
   try {
-    // Get presigned URL
-    const {
-      data: { uploads }
-    } = await axios.post(
-      "/api/uploads/presign",
-      {
-        userId: "PJ1nkaufw0hZPyhN7bWCP",
-        fileNames: [file.name]
-      },
-      {
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+    // Create FormData for local upload
+    const formData = new FormData();
+    formData.append("files", file);
 
-    const uploadInfo = uploads[0];
-
-    // Upload file with progress tracking
-    await axios.put(uploadInfo.presignedUrl, file, {
-      headers: { "Content-Type": uploadInfo.contentType },
+    // Upload file to local API with progress tracking
+    const { data } = await axios.post("/api/uploads/local", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
       onUploadProgress: (progressEvent) => {
         const percent = Math.round(
           (progressEvent.loaded * 100) / (progressEvent.total || 1)
         );
         callbacks.onProgress(uploadId, percent);
-      },
-      validateStatus: () => true
+      }
     });
+
+    const uploadInfo = data.uploads[0];
 
     // Construct upload data from uploadInfo
     const uploadData = {
+      id: uploadId,
       fileName: uploadInfo.fileName,
       filePath: uploadInfo.filePath,
       fileSize: file.size,
       contentType: uploadInfo.contentType,
-      metadata: { uploadedUrl: uploadInfo.url },
+      metadata: { 
+        uploadedUrl: uploadInfo.url,
+        originalName: uploadInfo.originalName || uploadInfo.fileName
+      },
       folder: uploadInfo.folder || null,
-      type: uploadInfo.contentType.split("/")[0],
+      type: getFileType(uploadInfo.contentType, uploadInfo.fileName),
       method: "direct",
       origin: "user",
       status: "uploaded",
@@ -105,7 +98,7 @@ export async function processUrlUpload(
       contentType: uploadInfo.contentType,
       metadata: { originalUrl: uploadInfo.originalUrl },
       folder: uploadInfo.folder || null,
-      type: uploadInfo.contentType.split("/")[0],
+      type: getFileType(uploadInfo.contentType, uploadInfo.fileName),
       method: "url",
       origin: "user",
       status: "uploaded",
@@ -135,4 +128,25 @@ export async function processUpload(
   }
   callbacks.onStatus(uploadId, "failed", "No file or URL provided");
   throw new Error("No file or URL provided");
+}
+
+function getFileType(contentType: string, fileName: string): string {
+  // Handle SRT files specifically
+  if (fileName.toLowerCase().endsWith('.srt')) {
+    return 'subtitle';
+  }
+  
+  // Handle other common subtitle formats
+  if (fileName.toLowerCase().match(/\.(vtt|ass|ssa)$/)) {
+    return 'subtitle';
+  }
+  
+  // Handle standard MIME types
+  if (contentType.startsWith('video/')) return 'video';
+  if (contentType.startsWith('audio/')) return 'audio';
+  if (contentType.startsWith('image/')) return 'image';
+  if (contentType === 'application/pdf') return 'document';
+  
+  // Default fallback
+  return contentType.split('/')[0];
 }
