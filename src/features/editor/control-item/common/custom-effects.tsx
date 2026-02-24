@@ -1,11 +1,23 @@
 import { IImage, ITrackItem, IVideo } from "@designcombo/types";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { dispatch } from "@designcombo/events";
 import { EDIT_OBJECT } from "@designcombo/state";
 import { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
-import useLayoutStore from "../../store/use-layout-store";
+import {
+  EASING_OPTIONS,
+  EFFECT_EASING_DEFAULTS,
+  EasingOption
+} from "../../constants/easing-options";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
 
 interface CustomEffectsProps {
@@ -16,6 +28,7 @@ interface CustomEffectsProps {
 type CustomEffectType = 
   | "fade-scale-bump"
   | "slide-up"
+  | "slide-left"
   | "swoosh-right"
   | "swoosh-left"
   | "blur-fade"
@@ -31,6 +44,11 @@ interface CustomEffect {
   name: string;
   description: string;
 }
+
+const SPEED_MIN = 8;
+const SPEED_MAX = 60;
+const DISTANCE_MIN = 0;
+const DISTANCE_MAX = 240;
 
 // Define custom effects based on the HTML project
 const CUSTOM_EFFECTS: Record<CustomEffectType, CustomEffect> = {
@@ -48,6 +66,11 @@ const CUSTOM_EFFECTS: Record<CustomEffectType, CustomEffect> = {
     id: "slide-up",
     name: "Slide Up",
     description: "Fade in from below"
+  },
+  "slide-left": {
+    id: "slide-left",
+    name: "Slide Left",
+    description: "Enters from the right edge"
   },
   "swoosh-right": {
     id: "swoosh-right",
@@ -91,6 +114,83 @@ const CUSTOM_EFFECTS: Record<CustomEffectType, CustomEffect> = {
   }
 };
 
+const EFFECT_CONFIG: Record<
+  Exclude<CustomEffectType, "none">,
+  {
+    name: string;
+    property: string;
+    durationInFrames: number;
+    distance: number;
+  }
+> = {
+  "fade-scale-bump": {
+    name: "fadeScaleBump",
+    property: "fadeScaleBump",
+    durationInFrames: 13,
+    distance: 18
+  },
+  "slide-up": {
+    name: "upMovement",
+    property: "slideUp",
+    durationInFrames: 21,
+    distance: 60
+  },
+  "slide-left": {
+    name: "leftMovement",
+    property: "slideLeft",
+    durationInFrames: 19,
+    distance: 80
+  },
+  "swoosh-right": {
+    name: "swooshRight",
+    property: "swooshRight",
+    durationInFrames: 19,
+    distance: 80
+  },
+  "swoosh-left": {
+    name: "swooshLeft",
+    property: "swooshLeft",
+    durationInFrames: 19,
+    distance: 80
+  },
+  "blur-fade": {
+    name: "blurFade",
+    property: "blurFade",
+    durationInFrames: 18,
+    distance: 12
+  },
+  "zoom-in": {
+    name: "zoomIn",
+    property: "zoomIn",
+    durationInFrames: 15,
+    distance: 20
+  },
+  "bounce-in": {
+    name: "bounceIn",
+    property: "bounceIn",
+    durationInFrames: 15,
+    distance: 24
+  },
+  "flip-in": {
+    name: "flipIn",
+    property: "flipIn",
+    durationInFrames: 16,
+    distance: 20
+  },
+  "split-wipe-v": {
+    name: "splitWipeV",
+    property: "splitWipeV",
+    durationInFrames: 18,
+    distance: 50
+  },
+  "split-wipe-h": {
+    name: "splitWipeH",
+    property: "splitWipeH",
+    durationInFrames: 18,
+    distance: 50
+  }
+};
+
 export default function CustomEffects({ trackItem }: CustomEffectsProps) {
   return (
     <div className="flex flex-col gap-2 py-4">
@@ -101,38 +201,65 @@ export default function CustomEffects({ trackItem }: CustomEffectsProps) {
 }
 
 const SelectCustomEffect = ({ trackItem }: CustomEffectsProps) => {
-  const { setFloatingControl } = useLayoutStore();
   const isLargeScreen = useIsLargeScreen();
   
   const [selectedEffect, setSelectedEffect] = useState<CustomEffectType>(
     ((trackItem.details as any).customEffect as CustomEffectType) || "none"
   );
+  const [selectedEasing, setSelectedEasing] = useState<EasingOption>(
+    "smoothSlide"
+  );
+  const [selectedDuration, setSelectedDuration] = useState<number>(21);
+  const [selectedDistance, setSelectedDistance] = useState<number>(60);
 
   useEffect(() => {
-    setSelectedEffect(
-      ((trackItem.details as any).customEffect as CustomEffectType) || "none"
-    );
+    const currentEffect =
+      ((trackItem.details as any).customEffect as CustomEffectType) || "none";
+    setSelectedEffect(currentEffect);
+
+    const currentEase = (trackItem.animations as any)?.in?.composition?.[0]
+      ?.ease as EasingOption | undefined;
+    if (currentEase) {
+      setSelectedEasing(currentEase);
+    }
+
+    if (currentEffect !== "none") {
+      const config = EFFECT_CONFIG[currentEffect];
+      if (!currentEase) {
+        setSelectedEasing(
+          EFFECT_EASING_DEFAULTS[config.property] || "smoothSlide"
+        );
+      }
+
+      const currentDuration = (trackItem.animations as any)?.in?.composition?.[0]
+        ?.durationInFrames as number | undefined;
+      const currentDistance = (trackItem.animations as any)?.in?.composition?.[0]
+        ?.distance as number | undefined;
+
+      setSelectedDuration(
+        typeof currentDuration === "number"
+          ? currentDuration
+          : config.durationInFrames
+      );
+      setSelectedDistance(
+        typeof currentDistance === "number" ? currentDistance : config.distance
+      );
+    } else {
+      setSelectedEasing("smoothSlide");
+      setSelectedDuration(21);
+      setSelectedDistance(60);
+    }
   }, [trackItem]);
 
-  const handleEffectChange = (effectId: CustomEffectType) => {
-    // Map custom effect to animation preset
-    const presetMap: Record<CustomEffectType, string> = {
-      "none": "none",
-      "fade-scale-bump": "fadeScaleBump",
-      "slide-up": "upMovement",  // Changed to NOT include "slide"
-      "swoosh-right": "swooshRight",
-      "swoosh-left": "swooshLeft",
-      "blur-fade": "blurFade",
-      "zoom-in": "zoomIn",
-      "bounce-in": "bounceIn",
-      "flip-in": "flipIn",
-      "split-wipe-v": "splitWipeV",
-      "split-wipe-h": "splitWipeH"
-    };
-    
-    const presetName = presetMap[effectId];
-    
-    if (presetName === "none") {
+  const applyEffect = (
+    effectId: CustomEffectType,
+    options?: {
+      easingId?: EasingOption;
+      durationInFrames?: number;
+      distance?: number;
+    }
+  ) => {
+    if (effectId === "none") {
       // Remove animations
       dispatch(EDIT_OBJECT, {
         payload: {
@@ -149,20 +276,30 @@ const SelectCustomEffect = ({ trackItem }: CustomEffectsProps) => {
         }
       });
     } else {
-      // Apply animation with proper composition structure
+      const config = EFFECT_CONFIG[effectId];
+      const ease =
+        options?.easingId ||
+        EFFECT_EASING_DEFAULTS[config.property] ||
+        "smoothSlide";
+      const durationInFrames =
+        options?.durationInFrames || config.durationInFrames;
+      const distance = options?.distance ?? config.distance;
+
+      // Apply animation
       dispatch(EDIT_OBJECT, {
         payload: {
           [trackItem.id]: {
             animations: {
               in: {
-                name: presetName,
+                name: config.name,
                 composition: [
                   {
-                    property: effectId === "slide-up" ? "slideUp" : presetName,
+                    property: config.property,
                     from: 0,
                     to: 1,
-                    durationInFrames: 30,
-                    ease: "ease"
+                    durationInFrames,
+                    ease,
+                    distance
                   }
                 ]
               }
@@ -174,41 +311,286 @@ const SelectCustomEffect = ({ trackItem }: CustomEffectsProps) => {
         }
       });
     }
+
     setSelectedEffect(effectId);
   };
 
-  const handleCustomEffectClick = () => {
-    setFloatingControl("customEffects");
+  const handleEffectChange = (effectId: CustomEffectType) => {
+    if (effectId === "none") {
+      setSelectedEffect(effectId);
+      applyEffect(effectId);
+      return;
+    }
+
+    const config = EFFECT_CONFIG[effectId];
+    const defaultEase = EFFECT_EASING_DEFAULTS[config.property] || "smoothSlide";
+    setSelectedEffect(effectId);
+    setSelectedEasing(defaultEase);
+    setSelectedDuration(config.durationInFrames);
+    setSelectedDistance(config.distance);
+    applyEffect(effectId, {
+      easingId: defaultEase,
+      durationInFrames: config.durationInFrames,
+      distance: config.distance
+    });
+  };
+
+  const handleEasingChange = (easingId: EasingOption) => {
+    setSelectedEasing(easingId);
+    if (selectedEffect !== "none") {
+      applyEffect(selectedEffect, {
+        easingId,
+        durationInFrames: selectedDuration,
+        distance: selectedDistance
+      });
+    }
+  };
+
+  const handleSpeedChange = (durationInFrames: number) => {
+    const clamped = Math.min(Math.max(durationInFrames, SPEED_MIN), SPEED_MAX);
+    setSelectedDuration(clamped);
+    if (selectedEffect !== "none") {
+      applyEffect(selectedEffect, {
+        easingId: selectedEasing,
+        durationInFrames: clamped,
+        distance: selectedDistance
+      });
+    }
+  };
+
+  const handleDistanceChange = (distance: number) => {
+    const clamped = Math.min(Math.max(distance, DISTANCE_MIN), DISTANCE_MAX);
+    setSelectedDistance(clamped);
+    if (selectedEffect !== "none") {
+      applyEffect(selectedEffect, {
+        easingId: selectedEasing,
+        durationInFrames: selectedDuration,
+        distance: clamped
+      });
+    }
+  };
+
+  const handleResetEffect = () => {
+    if (selectedEffect === "none") return;
+
+    const config = EFFECT_CONFIG[selectedEffect];
+    const defaultEase = EFFECT_EASING_DEFAULTS[config.property] || "smoothSlide";
+    setSelectedEasing(defaultEase);
+    setSelectedDuration(config.durationInFrames);
+    setSelectedDistance(config.distance);
+    applyEffect(selectedEffect, {
+      easingId: defaultEase,
+      durationInFrames: config.durationInFrames,
+      distance: config.distance
+    });
   };
 
   return (
     <>
       {isLargeScreen ? (
-        <div className="relative w-32">
-          <Button
-            className="flex h-8 w-full items-center justify-between text-sm"
-            variant="secondary"
-            onClick={handleCustomEffectClick}
-          >
-            <div className="w-full text-left">
-              <p className="truncate">{CUSTOM_EFFECTS[selectedEffect]?.name || "None"}</p>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Effect</Label>
+            <Select
+              value={selectedEffect}
+              onValueChange={(value) =>
+                handleEffectChange(value as CustomEffectType)
+              }
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(CUSTOM_EFFECTS).map((effect) => (
+                  <SelectItem key={effect.id} value={effect.id}>
+                    {effect.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedEffect !== "none" && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Easing</Label>
+                <Select
+                  value={selectedEasing}
+                  onValueChange={(value) =>
+                    handleEasingChange(value as EasingOption)
+                  }
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EASING_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Speed (frames)</Label>
+                  <Input
+                    type="number"
+                    className="h-7 w-16 px-2 text-right text-xs"
+                    value={selectedDuration}
+                    min={SPEED_MIN}
+                    max={SPEED_MAX}
+                    onChange={(e) =>
+                      handleSpeedChange(Number(e.target.value || SPEED_MIN))
+                    }
+                  />
+                </div>
+                <Slider
+                  value={[selectedDuration]}
+                  min={SPEED_MIN}
+                  max={SPEED_MAX}
+                  step={1}
+                  onValueChange={(value) => handleSpeedChange(value[0])}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Travel distance (px)</Label>
+                  <Input
+                    type="number"
+                    className="h-7 w-16 px-2 text-right text-xs"
+                    value={selectedDistance}
+                    min={DISTANCE_MIN}
+                    max={DISTANCE_MAX}
+                    onChange={(e) =>
+                      handleDistanceChange(
+                        Number(e.target.value || DISTANCE_MIN)
+                      )
+                    }
+                  />
+                </div>
+                <Slider
+                  value={[selectedDistance]}
+                  min={DISTANCE_MIN}
+                  max={DISTANCE_MAX}
+                  step={1}
+                  onValueChange={(value) => handleDistanceChange(value[0])}
+                />
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 w-full"
+                onClick={handleResetEffect}
+              >
+                Reset to default
+              </Button>
             </div>
-            <ChevronDown className="text-muted-foreground" size={14} />
-          </Button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
-          {Object.values(CUSTOM_EFFECTS).map((effect) => (
-            <Button
-              key={effect.id}
-              variant={selectedEffect === effect.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleEffectChange(effect.id)}
-              className="text-xs h-8"
-            >
-              {effect.name}
-            </Button>
-          ))}
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            {Object.values(CUSTOM_EFFECTS).map((effect) => (
+              <Button
+                key={effect.id}
+                variant={selectedEffect === effect.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleEffectChange(effect.id)}
+                className="h-8 text-xs"
+              >
+                {effect.name}
+              </Button>
+            ))}
+          </div>
+
+          {selectedEffect !== "none" && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Easing</Label>
+                <Select
+                  value={selectedEasing}
+                  onValueChange={(value) =>
+                    handleEasingChange(value as EasingOption)
+                  }
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EASING_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Speed (frames)</Label>
+                  <Input
+                    type="number"
+                    className="h-7 w-16 px-2 text-right text-xs"
+                    value={selectedDuration}
+                    min={SPEED_MIN}
+                    max={SPEED_MAX}
+                    onChange={(e) =>
+                      handleSpeedChange(Number(e.target.value || SPEED_MIN))
+                    }
+                  />
+                </div>
+                <Slider
+                  value={[selectedDuration]}
+                  min={SPEED_MIN}
+                  max={SPEED_MAX}
+                  step={1}
+                  onValueChange={(value) => handleSpeedChange(value[0])}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Travel distance (px)</Label>
+                  <Input
+                    type="number"
+                    className="h-7 w-16 px-2 text-right text-xs"
+                    value={selectedDistance}
+                    min={DISTANCE_MIN}
+                    max={DISTANCE_MAX}
+                    onChange={(e) =>
+                      handleDistanceChange(
+                        Number(e.target.value || DISTANCE_MIN)
+                      )
+                    }
+                  />
+                </div>
+                <Slider
+                  value={[selectedDistance]}
+                  min={DISTANCE_MIN}
+                  max={DISTANCE_MAX}
+                  step={1}
+                  onValueChange={(value) => handleDistanceChange(value[0])}
+                />
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 w-full"
+                onClick={handleResetEffect}
+              >
+                Reset to default
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </>

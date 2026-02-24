@@ -60,7 +60,8 @@ export const Video = ({
   const children = (
     <BoxAnim
       style={calculateContainerStyles(details, crop, {
-        overflow: "hidden"
+        overflow: "hidden",
+        perspective: 800
       })}
       animationIn={animationIn}
       animationOut={animationOut}
