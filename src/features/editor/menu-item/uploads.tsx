@@ -325,7 +325,7 @@ export const Uploads = () => {
   );
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       <div className="text-text-primary flex h-12 flex-none items-center px-4 text-sm font-medium">
         Your uploads
       </div>
@@ -366,7 +366,8 @@ export const Uploads = () => {
         </div>
       )}
 
-      <div className="flex flex-col gap-10 p-4">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="flex flex-col gap-10 p-4 pb-6">
         {/* Videos Section */}
         {videos.length > 0 && (
           <div>
@@ -374,7 +375,6 @@ export const Uploads = () => {
               <VideoIcon className="w-4 h-4 text-muted-foreground" />
               <span className="font-medium text-sm">Videos</span>
             </div>
-            <ScrollArea className="max-h-32">
               <div className="grid grid-cols-3 gap-2 max-w-full">
                 {videos.map((video, idx) => (
                   <Draggable
@@ -426,7 +426,6 @@ export const Uploads = () => {
                   </Draggable>
                 ))}
               </div>
-            </ScrollArea>
           </div>
         )}
 
@@ -437,7 +436,6 @@ export const Uploads = () => {
               <ImageIcon className="w-4 h-4 text-muted-foreground" />
               <span className="font-medium text-sm">Images</span>
             </div>
-            <ScrollArea className="max-h-32">
               <div className="grid grid-cols-3 gap-2 max-w-full">
                 {images.map((image, idx) => (
                   <Draggable
@@ -480,7 +478,6 @@ export const Uploads = () => {
                   </Draggable>
                 ))}
               </div>
-            </ScrollArea>
           </div>
         )}
 
@@ -491,7 +488,6 @@ export const Uploads = () => {
               <Music className="w-4 h-4 text-muted-foreground" />
               <span className="font-medium text-sm">Audios</span>
             </div>
-            <ScrollArea className="max-h-32">
               <div className="grid grid-cols-3 gap-2 max-w-full">
                 {audios.map((audio, idx) => (
                   <Draggable
@@ -524,7 +520,6 @@ export const Uploads = () => {
                   </Draggable>
                 ))}
               </div>
-            </ScrollArea>
           </div>
         )}
 
@@ -535,7 +530,6 @@ export const Uploads = () => {
               <CaptionsIcon className="w-4 h-4 text-muted-foreground" />
               <span className="font-medium text-sm">Subtitles</span>
             </div>
-            <ScrollArea className="max-h-32">
               <div className="grid grid-cols-3 gap-2 max-w-full">
                 {subtitles.map((subtitle, idx) => (
                   <div
@@ -554,10 +548,10 @@ export const Uploads = () => {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
           </div>
         )}
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 };
