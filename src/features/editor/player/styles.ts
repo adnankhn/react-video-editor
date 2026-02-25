@@ -226,6 +226,9 @@ export const calculateContainerStyles = (
         : crop.height || details.height || "max-content",
     transform: details.transform || "none",
     opacity: details.opacity !== undefined ? details.opacity / 100 : 1,
+    mixBlendMode:
+      ((details as any).mixBlendMode as React.CSSProperties["mixBlendMode"]) ||
+      "normal",
     transformOrigin: details.transformOrigin || "center center",
     filter: `brightness(${details.brightness}%) blur(${details.blur}px)`,
     rotate: details.rotate || "0deg",

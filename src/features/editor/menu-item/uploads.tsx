@@ -15,10 +15,81 @@ import { generateId } from "@designcombo/timeline";
 import { Button } from "@/components/ui/button";
 import useUploadStore from "../store/use-upload-store";
 import ModalUpload from "@/components/modal-upload";
+import Draggable from "@/components/shared/draggable";
+import { useIsDraggingOverTimeline } from "../hooks/is-dragging-over-timeline";
 
 export const Uploads = () => {
+  const isDraggingOverTimeline = useIsDraggingOverTimeline();
   const { setShowUploadModal, uploads, pendingUploads, activeUploads, initialize, setUploads } =
     useUploadStore();
+
+  const resolveUploadSrc = (upload: any) =>
+    upload?.metadata?.uploadedUrl ||
+    upload?.url ||
+    upload?.metadata?.originalUrl ||
+    upload?.filePath ||
+    "";
+
+  const getUploadVideoPreview = (video: any) =>
+    video?.metadata?.previewUrl ||
+    "https://cdn.designcombo.dev/caption_previews/static_preset1.webp";
+
+  const getUploadImagePreview = (image: any) =>
+    image?.metadata?.uploadedUrl || resolveUploadSrc(image);
+
+  const createVideoPayload = (video: any) => {
+    const srcVideo = resolveUploadSrc(video);
+    return {
+      id: generateId(),
+      type: "video",
+      preview: getUploadVideoPreview(video),
+      duration: video?.duration || video?.metadata?.duration,
+      details: {
+        src: srcVideo,
+        borderWidth: 0,
+        borderColor: "transparent",
+        borderEffect: "none"
+      },
+      metadata: {
+        previewUrl: getUploadVideoPreview(video)
+      }
+    };
+  };
+
+  const createImagePayload = (image: any) => {
+    const srcImage = resolveUploadSrc(image);
+    return {
+      id: generateId(),
+      type: "image",
+      display: {
+        from: 0,
+        to: 5000
+      },
+      details: {
+        src: srcImage,
+        borderRadius: 0,
+        borderEffect: "none"
+      },
+      metadata: {
+        previewUrl: getUploadImagePreview(image)
+      }
+    };
+  };
+
+  const createAudioPayload = (audio: any) => {
+    const srcAudio = resolveUploadSrc(audio);
+    return {
+      id: generateId(),
+      type: "audio",
+      details: {
+        src: srcAudio
+      },
+      metadata: {
+        author: audio?.metadata?.author,
+        mood: audio?.metadata?.mood
+      }
+    };
+  };
 
   // Clean up invalid uploads on component mount
   useEffect(() => {
@@ -60,7 +131,7 @@ export const Uploads = () => {
   );
 
   const handleAddVideo = (video: any) => {
-    const srcVideo = video.metadata?.uploadedUrl || video.url;
+    const srcVideo = resolveUploadSrc(video);
 
     dispatch(ADD_VIDEO, {
       payload: {
@@ -84,7 +155,7 @@ export const Uploads = () => {
   };
 
   const handleAddImage = (image: any) => {
-    const srcImage = image.metadata?.uploadedUrl || image.url;
+    const srcImage = resolveUploadSrc(image);
 
     dispatch(ADD_IMAGE, {
       payload: {
@@ -106,7 +177,7 @@ export const Uploads = () => {
   };
 
   const handleAddAudio = (audio: any) => {
-    const srcAudio = audio.metadata?.uploadedUrl || audio.url;
+    const srcAudio = resolveUploadSrc(audio);
     dispatch(ADD_AUDIO, {
       payload: {
         id: generateId(),
@@ -306,39 +377,53 @@ export const Uploads = () => {
             <ScrollArea className="max-h-32">
               <div className="grid grid-cols-3 gap-2 max-w-full">
                 {videos.map((video, idx) => (
-                  <div
-                    className="flex items-center gap-2 flex-col w-full"
+                  <Draggable
                     key={video.id || idx}
+                    data={createVideoPayload(video)}
+                    shouldDisplayPreview={!isDraggingOverTimeline}
+                    renderCustomPreview={
+                      <div
+                        className="draggable rounded-md"
+                        style={{
+                          width: "80px",
+                          height: "80px",
+                          backgroundImage: `url(${getUploadVideoPreview(video)})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center"
+                        }}
+                      />
+                    }
                   >
-                    <Card
-                      className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
-                      onClick={() => handleAddVideo(video)}
-                    >
-                      {video.metadata?.previewUrl ? (
-                        <img 
-                          src={video.metadata.previewUrl} 
-                          alt={video.fileName || "Video thumbnail"}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to video icon if thumbnail fails to load
-                            e.currentTarget.style.display = 'none';
-                            const parent = e.currentTarget.parentElement;
-                            if (parent) {
-                              const fallbackIcon = document.createElement('div');
-                              fallbackIcon.className = 'w-8 h-8 text-muted-foreground flex items-center justify-center';
-                              fallbackIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>';
-                              parent.appendChild(fallbackIcon);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <VideoIcon className="w-8 h-8 text-muted-foreground" />
-                      )}
-                    </Card>
-                    <div className="text-xs text-muted-foreground truncate w-full text-center" title={video.fileName || video.file?.name || video.url}>
-                      {video.fileName || video.file?.name || video.url || "Video"}
+                    <div className="flex items-center gap-2 flex-col w-full">
+                      <Card
+                        className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
+                        onClick={() => handleAddVideo(video)}
+                      >
+                        {video.metadata?.previewUrl ? (
+                          <img
+                            src={video.metadata.previewUrl}
+                            alt={video.fileName || "Video thumbnail"}
+                            className="w-full h-full object-cover"
+                            draggable={false}
+                          />
+                        ) : resolveUploadSrc(video) ? (
+                          <video
+                            src={resolveUploadSrc(video)}
+                            muted
+                            playsInline
+                            preload="metadata"
+                            className="w-full h-full object-cover"
+                            draggable={false}
+                          />
+                        ) : (
+                          <VideoIcon className="w-8 h-8 text-muted-foreground" />
+                        )}
+                      </Card>
+                      <div className="text-xs text-muted-foreground truncate w-full text-center" title={video.fileName || video.file?.name || video.url}>
+                        {video.fileName || video.file?.name || video.url || "Video"}
+                      </div>
                     </div>
-                  </div>
+                  </Draggable>
                 ))}
               </div>
             </ScrollArea>
@@ -355,39 +440,44 @@ export const Uploads = () => {
             <ScrollArea className="max-h-32">
               <div className="grid grid-cols-3 gap-2 max-w-full">
                 {images.map((image, idx) => (
-                  <div
-                    className="flex items-center gap-2 flex-col w-full"
+                  <Draggable
                     key={image.id || idx}
+                    data={createImagePayload(image)}
+                    shouldDisplayPreview={!isDraggingOverTimeline}
+                    renderCustomPreview={
+                      <div
+                        className="draggable rounded-md"
+                        style={{
+                          width: "80px",
+                          height: "80px",
+                          backgroundImage: `url(${getUploadImagePreview(image)})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center"
+                        }}
+                      />
+                    }
                   >
-                    <Card
-                      className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
-                      onClick={() => handleAddImage(image)}
-                    >
-                      {image.metadata?.uploadedUrl ? (
-                        <img 
-                          src={image.metadata.uploadedUrl} 
-                          alt={image.fileName || "Image"}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to image icon if image fails to load
-                            e.currentTarget.style.display = 'none';
-                            const parent = e.currentTarget.parentElement;
-                            if (parent) {
-                              const fallbackIcon = document.createElement('div');
-                              fallbackIcon.className = 'w-8 h-8 text-muted-foreground flex items-center justify-center';
-                              fallbackIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-                              parent.appendChild(fallbackIcon);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                      )}
-                    </Card>
-                    <div className="text-xs text-muted-foreground truncate w-full text-center" title={image.fileName || image.file?.name || image.url}>
-                      {image.fileName || image.file?.name || image.url || "Image"}
+                    <div className="flex items-center gap-2 flex-col w-full">
+                      <Card
+                        className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
+                        onClick={() => handleAddImage(image)}
+                      >
+                        {resolveUploadSrc(image) ? (
+                          <img
+                            src={resolveUploadSrc(image)}
+                            alt={image.fileName || "Image"}
+                            className="w-full h-full object-cover"
+                            draggable={false}
+                          />
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                        )}
+                      </Card>
+                      <div className="text-xs text-muted-foreground truncate w-full text-center" title={image.fileName || image.file?.name || image.url}>
+                        {image.fileName || image.file?.name || image.url || "Image"}
+                      </div>
                     </div>
-                  </div>
+                  </Draggable>
                 ))}
               </div>
             </ScrollArea>
@@ -404,20 +494,34 @@ export const Uploads = () => {
             <ScrollArea className="max-h-32">
               <div className="grid grid-cols-3 gap-2 max-w-full">
                 {audios.map((audio, idx) => (
-                  <div
-                    className="flex items-center gap-2 flex-col w-full"
+                  <Draggable
                     key={audio.id || idx}
+                    data={createAudioPayload(audio)}
+                    shouldDisplayPreview={!isDraggingOverTimeline}
+                    renderCustomPreview={
+                      <div
+                        className="draggable rounded-md bg-zinc-800/90 flex items-center justify-center"
+                        style={{
+                          width: "70px",
+                          height: "70px"
+                        }}
+                      >
+                        <Music className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    }
                   >
-                    <Card
-                      className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
-                      onClick={() => handleAddAudio(audio)}
-                    >
-                      <Music className="w-8 h-8 text-muted-foreground" />
-                    </Card>
-                    <div className="text-xs text-muted-foreground truncate w-full text-center" title={audio.fileName || audio.file?.name || audio.url}>
-                      {audio.fileName || audio.file?.name || audio.url || "Audio"}
+                    <div className="flex items-center gap-2 flex-col w-full">
+                      <Card
+                        className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
+                        onClick={() => handleAddAudio(audio)}
+                      >
+                        <Music className="w-8 h-8 text-muted-foreground" />
+                      </Card>
+                      <div className="text-xs text-muted-foreground truncate w-full text-center" title={audio.fileName || audio.file?.name || audio.url}>
+                        {audio.fileName || audio.file?.name || audio.url || "Audio"}
+                      </div>
                     </div>
-                  </div>
+                  </Draggable>
                 ))}
               </div>
             </ScrollArea>

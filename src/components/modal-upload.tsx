@@ -274,11 +274,11 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
   return (
     <div>
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-md">Upload media</DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
+          <div className="space-y-6 flex-1 overflow-y-auto pr-1">
             <label className="flex flex-col gap-2">
               <input
                 type="file"

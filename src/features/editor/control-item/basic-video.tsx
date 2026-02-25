@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Animations } from "./common/animations";
 import CustomEffects from "./common/custom-effects";
 import BorderEffects from "./border-effects";
+import BlendMode from "./common/blend-mode";
 
 const BasicVideo = ({
   trackItem,
@@ -166,6 +167,28 @@ const BasicVideo = ({
     });
   };
 
+  const handleChangeBlendMode = (v: string) => {
+    dispatch(EDIT_OBJECT, {
+      payload: {
+        [trackItem.id]: {
+          details: {
+            mixBlendMode: v
+          }
+        }
+      }
+    });
+
+    setProperties((prev) => {
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          mixBlendMode: v
+        }
+      };
+    });
+  };
+
   const onChangeBorderRadius = (v: number) => {
     dispatch(EDIT_OBJECT, {
       payload: {
@@ -261,6 +284,10 @@ const BasicVideo = ({
           <Opacity
             onChange={(v: number) => handleChangeOpacity(v)}
             value={properties.details.opacity ?? 100}
+          />
+          <BlendMode
+            onChange={handleChangeBlendMode}
+            value={(properties.details as any).mixBlendMode ?? "normal"}
           />
           <Speed
             value={properties.playbackRate ?? 1}
